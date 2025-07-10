@@ -1,4 +1,6 @@
 # rag
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/0c10067c-581f-4b90-ab57-5fc403f83b0f" />
+
 
 
 # 🔍 High-Level Overview
