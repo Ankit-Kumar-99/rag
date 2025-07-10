@@ -105,3 +105,125 @@ chain = create_sql_query_chain(llm, db)
 question = "What are the top 5 customers by invoice amount?"
 sql = chain.invoke({"question": question})
 print("Generated SQL:", sql)
+
+
+https://sdmntprnorthcentralus.oaiusercontent.com/files/00000000-9704-622f-a56e-6e2278329bee/raw?se=2025-07-10T18%3A02%3A59Z&sp=r&sv=2024-08-04&sr=b&scid=d229fc3b-5f0b-538f-bf1a-2cd74b213e2a&skoid=add8ee7d-5fc7-451e-b06e-a82b2276cf62&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-07-10T01%3A34%3A46Z&ske=2025-07-11T01%3A34%3A46Z&sks=b&skv=2024-08-04&sig=j2fHzUHtUsRWMPm1xzW5xudZ6q1OX%2Bj0CehpG1pMse0%3D<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/1aaabc83-6331-4f05-9f75-f2cd36722f73" />
+
+
+
+# 🧠 Goal
+
+Allow users to ask natural language questions, convert them to SQL queries, execute those queries on a database, analyze the results using an LLM, and return both query + insights + tabular data to the frontend.
+
+## ✅ Components Involved
+
+Component	Purpose
+FastAPI	Handles HTTP API endpoints
+LangChain SQL Agent	Converts NL → SQL
+Azure OpenAI (LLM)	Generates SQL + insights
+SQLDatabase (Chinook.db)	Source of truth (sample SQLite database)
+MongoDB	Logs query history
+OAuth2 + JWT	User session management
+CORS Middleware	Cross-origin support (for React frontend)
+🔄 Detailed Flow: Step-by-Step
+
+## 1. User logs in via Google
+@app.post("/googlelogin/")
+JWT token is received → decoded.
+If user is new → insert in MongoDB (users).
+Session is stored (request.session["user_id"] = id).
+## 2. User selects tables (optional)
+GET /tables/
+Returns usable table names from the Chinook.db database.
+
+## 3. User asks a question
+POST /query/
+Request:
+
+{
+  "question": "Show total sales by country",
+  "selected_tables": ["invoices", "customers"]
+}
+## 4. Question is modified with table hint (if provided)
+question += f" strictly using {selected_tables_str} tables"
+Ensures generated SQL is scoped only to selected tables.
+
+## 5. LangChain SQL Agent generates SQL
+query = agent_executor.invoke({"question": question})
+Uses AzureOpenAI as the LLM.
+Understands schema via SQLDatabase.from_uri().
+Outputs SQL like:
+SELECT BillingCountry, SUM(Total) FROM invoices GROUP BY BillingCountry;
+## 6. SQL is executed
+result = execute_query.invoke({"query": query})
+Uses QuerySQLDataBaseTool (LangChain tool).
+Runs query against SQLite (Chinook.db).
+Returns data like:
+[('USA', 2500.50), ('Canada', 1230.00)]
+## 7. Column headers are extracted
+column_name = llm.invoke("Given this SQL query... Provide column names as a Python list")
+→ Extracts:
+
+['Country', 'Total']
+This is used for tabular formatting on the frontend.
+
+## 8. Data + Headers are combined
+combined_result = [tuple(extracted_content_list)] + result
+→ Now the result looks like:
+
+[('Country', 'Total'), ('USA', 2500.50), ('Canada', 1230.00)]
+## 9. Insights are generated
+insights = llm.invoke(
+    f"Analyze the following data and provide insights related to sales trends and projections..."
+)
+LLM outputs:
+
+"The USA has the highest sales, followed by Canada..."
+## 10. Round off numeric values
+combined_result[i] = tuple(round(val, 2) if isinstance(val, float) else val ...)
+Ensures clean display (like 2500.5 → 2500.50).
+
+## 11. Result is saved to history
+sql_history.insert_one({
+    "id": user_id,
+    "question": question,
+    "query": query,
+    "result": str(combined_result),
+    "insights": insights
+})
+## 12. Response returned to frontend
+{
+  "question": "...",
+  "query": "...",
+  "result": [["Country", "Total"], ["USA", 2500.50]],
+  "insights": "USA leads in sales..."
+}
+Frontend may now:
+
+Display a table using result.
+Show insights as text.
+Plot bar charts from result.
+🧠 Extra Features
+
+🔁 History Retrieval
+GET /history/
+Returns past query logs for a user:
+
+question
+query
+result
+insights
+🛡️ Authentication
+JWT-based, stored in session.
+All query endpoints are protected by:
+Depends(get_current_user)
+🧱 Technologies Used
+
+Layer	Tools
+API	FastAPI
+LLM	Azure OpenAI + LangChain
+Vector Tools	Not used here (used in document/audio)
+Database	SQLite (for SQL execution), MongoDB (for logging)
+Security	OAuth2 + JWT
+Frontend integration	CORS-enabled (localhost:3000)
+
