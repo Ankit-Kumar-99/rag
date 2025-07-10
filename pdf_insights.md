@@ -1,4 +1,5 @@
 # ✅ End-to-End Flow: PDF Upload + Question Answering with RAG
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/a591ca08-6f72-4641-ac63-ff2334e67f6e" />
 
 # 🔁 Step-by-Step Breakdown:
 
