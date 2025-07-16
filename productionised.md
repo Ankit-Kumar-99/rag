@@ -148,6 +148,59 @@ Optional: Add RateLimiter middleware for abusive traffic
 You can say:
 
 I load tested the FastAPI endpoints using Locust or k6 to simulate concurrent users and observed behavior under load.
+
+
+
+## Questions
+
+## ✅ Q1: How did you productionize your RAG-based application?
+Answer:
+
+I containerized the entire FastAPI + LangChain application using Docker and deployed it on Kubernetes. The image was built and pushed to Docker Hub (or ACR), and deployed using Kubernetes manifests for Deployment, Service, and Secrets. We used JWT for authentication, and integrated CI/CD via GitHub Actions to automate builds, tests, and rollouts.
+## ✅ Q2: Why did you choose Kubernetes for deployment?
+Answer:
+
+Kubernetes gives us flexibility to scale horizontally, manage pods, handle rollbacks, and expose our API securely. It also lets us add liveness/readiness probes, autoscaling, and monitor resource usage, which is crucial for serving ML-powered applications like ours.
+## ✅ Q3: How are secrets and environment variables managed in your deployment?
+Answer:
+
+We use Kubernetes Secrets to inject sensitive data like Azure OpenAI keys, embedding keys, and Mongo credentials. These are mounted as environment variables inside the container and never hardcoded in code or configs. For enhanced security, we can also use tools like Azure Key Vault or HashiCorp Vault.
+## ✅ Q4: What CI/CD pipeline did you use?
+Answer:
+
+We used GitHub Actions for CI/CD. On every push to main, the pipeline builds the Docker image, pushes it to Docker Hub, and updates the Kubernetes deployment using kubectl apply. The pipeline also includes steps for basic unit testing with pytest.
+## ✅ Q5: How do you monitor your application in production?
+Answer:
+
+We integrated Prometheus and Grafana to monitor pod metrics like memory, CPU, and request latency. For logs, we used Fluent Bit + Elasticsearch + Kibana (ELK) to visualize logs, or Azure Monitor if hosted on AKS. Liveness and readiness probes ensure that the pods stay healthy.
+## ✅ Q6: How is your system secured?
+Answer:
+
+We use OAuth2 with JWT tokens for user sessions. CORS is enabled only for approved origins (like the React frontend). Environment secrets are never exposed. Optionally, we can add rate limiting or API gateway security layers for additional protection.
+## ✅ Q7: How do you handle scaling when user traffic increases?
+Answer:
+
+We set up a Horizontal Pod Autoscaler in Kubernetes based on CPU/memory thresholds. If traffic spikes or query load increases, new pods are spun up to handle requests. Since the FastAPI app is stateless, this horizontal scaling works seamlessly.
+## ✅ Q8: What’s the advantage of containerizing the app with Docker?
+Answer:
+
+Docker makes our app portable and environment-agnostic. It ensures all dependencies, Python versions, and configurations are bundled into a single image, eliminating the "it works on my machine" issue.
+## ✅ Q9: How would you update your app in production without downtime?
+Answer:
+
+We use rolling updates in Kubernetes. When the new Docker image is deployed, old pods are replaced one-by-one while keeping the service alive. This ensures zero-downtime updates.
+## ✅ Q10: How do you ensure reproducibility in different environments (dev/stage/prod)?
+Answer:
+
+We manage configs using .env files or K8s secrets per environment. The Docker image remains the same, and only the configuration changes across environments, ensuring reproducible behavior.
+## ✅ Q11: How is the LangChain + Azure OpenAI integrated in production?
+Answer:
+
+We initialize the AzureOpenAI class with deployment details via environment variables. For caching and performance, we optionally set SQLiteCache or Redis cache. The LLM runs statelessly behind an API, so it scales well with multiple pods.
+## ✅ Q12: How do you version control your models or vector indexes?
+Answer:
+
+For document-based RAG, we track index_name and filename in MongoDB. Each upload is processed and embedded into Azure Cognitive Search. Versioning of indexes can be added by appending timestamps or using semantic versioning in index names.
 ## ✅ Summary: What to Say in Interviews
 
 I built a LangChain-based FastAPI app, dockerized it, and deployed it on a Kubernetes cluster with proper CI/CD using GitHub Actions. Secrets are managed via K8s Secrets. We exposed the service via LoadBalancer, added autoscaling, monitoring via Prometheus, and logging with centralized tooling. Authentication and session security are handled via JWT. The application is resilient, scalable, and
