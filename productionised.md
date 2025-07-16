@@ -55,9 +55,15 @@ Run the container:
 docker run -p 8000:8000 rag-app
 ```
 Test it locally:
+
 Open your browser or Postman:
+```dockerfile
+
 http://localhost:8000/
+```
 📁 Project Structure Example
+```dockerfile
+
 rag-app/
 │
 ├── main.py
@@ -68,6 +74,7 @@ rag-app/
 ├── models/
 │   └── auth.py
 └── Dockerfile
+```
 🛠 Common Interview Questions (and how to answer)
 🔹 Q: Why Docker instead of just using venv or pip locally?
 
