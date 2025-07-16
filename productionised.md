@@ -85,15 +85,108 @@ Use python:3.10-slim, avoid unnecessary dependencies, and use multi-stage builds
 🔹 Q: What is the difference between image and container?
 
 An image is a static snapshot (like a class), while a container is a running instance (like an object). You run containers from images.
-## ✅ 2. Image Registry (Docker Hub or ACR)
 
-Once the image is built, I push it to a Docker image registry like Docker Hub or Azure Container Registry (ACR).
-## ✅ Sample:
-docker tag rag-app yourdockerhub/rag-app:latest
-docker push yourdockerhub/rag-app:latest
-You can say:
 
-I used a private Docker registry for image storage and retrieval in Kubernetes.
+# ✅ Step 2: Image Registry — Docker Hub / Azure Container Registry (ACR)
+
+After building the Docker image, it needs to be stored in a central **image registry** from which Kubernetes (or any deployment engine) can pull and run the container.
+
+---
+
+## 🎯 Goal
+
+- Store Docker images in a centralized, versioned registry
+- Allow CI/CD and Kubernetes to pull the latest application image
+- Enable version control and rollback of container builds
+
+---
+
+## 📦 Supported Registries
+
+| Registry       | Description                                  |
+|----------------|----------------------------------------------|
+| Docker Hub     | Public and private Docker image hosting      |
+| Azure ACR      | Fully managed Azure container registry       |
+| AWS ECR        | Elastic Container Registry on AWS            |
+| GitHub Packages| Image registry built into GitHub ecosystem   |
+
+---
+
+## 🔐 Why Use a Private Registry?
+
+- Control who can pull images
+- Avoid leaking proprietary code in public registries
+- Better integration with cloud (e.g., Azure ACR + AKS)
+
+---
+
+## 🐋 Docker Hub Example
+
+### 1. Tag the Image
+
+```bash
+docker tag rag-app yourdockerhubusername/rag-app:latest
+
+
+2. Push to Docker Hub
+```bash
+
+docker push yourdockerhubusername/rag-app:latest
+```
+Make sure you're logged in using:
+
+docker login
+☁️ Azure Container Registry (ACR) Example
+
+1. Log in to ACR
+```bash
+
+az acr login --name <your-acr-name>
+```
+3. Tag the Image
+```bash
+
+docker tag rag-app <your-acr-name>.azurecr.io/rag-app:latest
+```
+5. Push the Image
+```bash
+
+docker push <your-acr-name>.azurecr.io/rag-app:latest
+```
+🗣 What You Can Say in Interviews
+
+I used a private container registry (Docker Hub / ACR) to store and manage our application images.
+This allowed our Kubernetes cluster to pull container images securely using Kubernetes secrets or cloud-managed identities.
+📌 Image Versioning Tip
+
+Tag your images with Git commit hashes or release versions to ensure traceability.
+
+docker tag rag-app yourrepo/rag-app:v1.0.3
+docker push yourrepo/rag-app:v1.0.3
+🧠 Interview Questions & Smart Answers
+
+❓ Why use a container registry?
+To centrally store, version, and distribute Docker images across environments and clusters.
+❓ What’s the difference between Docker Hub and ACR?
+Docker Hub is platform-agnostic and widely used.
+ACR is Azure-native and integrates well with Azure Kubernetes Service (AKS), IAM, and CI/CD pipelines.
+❓ How do you authenticate Kubernetes with a private registry?
+In AKS, we can enable managed identity access to ACR.
+In other clusters, we create a Kubernetes imagePullSecret using a Docker config and attach it to the service account or deployment.
+🛠 Bonus: Add Image Info to Kubernetes Deployment YAML
+```bash
+
+containers:
+  - name: rag-app
+    image: yourrepo/rag-app:latest
+    imagePullPolicy: Always
+```
+
+Would you like the **next section** on:
+- ✅ Kubernetes YAML files (`Deployment`, `Service`, etc.)
+- ✅ GitHub Actions CI/CD for pushing images
+
+Let me know — I can continue building the full README production guide!
 ## ✅ 3. Deployment using Kubernetes (K8s)
 
 Goal: Run and scale the app reliably in production.
@@ -104,6 +197,8 @@ Created Deployment, Service, and ConfigMap YAMLs.
 Managed secrets using Kubernetes Secrets or Azure Key Vault.
 ## ✅ Key K8s Resources
 ## ✅ Deployment YAML (simplified)
+```bash
+
 
 apiVersion: apps/v1
 kind: Deployment
@@ -127,7 +222,9 @@ spec:
         envFrom:
         - secretRef:
             name: rag-secrets
+```
 ## ✅ Service YAML
+```bash
 
 apiVersion: v1
 kind: Service
@@ -141,6 +238,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 8000
+```
 ## ✅ 4. Environment Variables and Secrets
 
 Use Kubernetes Secrets or external tools like:
@@ -148,6 +246,7 @@ Use Kubernetes Secrets or external tools like:
 Azure Key Vault
 HashiCorp Vault
 Example:
+```bash
 
 apiVersion: v1
 kind: Secret
@@ -156,6 +255,7 @@ metadata:
 type: Opaque
 data:
   AZURE_OPENAI_KEY: <base64 encoded>
+```
 ## ✅ 5. Scalability & Resilience
 
 Mention:
